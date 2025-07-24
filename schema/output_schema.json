@@ -1,55 +1,19 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PDF Document Structure",
   "type": "object",
-  "required": ["title", "meta", "outline", "tables"],
   "properties": {
-    "title": {
-      "type": "string"
-    },
-    "meta": {
-      "type": "object",
-      "required": ["title", "created", "pages", "producer"],
-      "properties": {
-        "title": { "type": "string" },
-        "created": { "type": "string" },
-        "pages": { "type": "integer" },
-        "producer": { "type": "string" }
-      }
-    },
+    "title": { "type": "string" },
     "outline": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "text", "page"],
         "properties": {
-          "level": { "type": "string", "enum": ["H1", "H2", "H3"] },
+          "level": { "type": "string" },
           "text": { "type": "string" },
           "page": { "type": "integer" }
-        }
-      }
-    },
-    "tables": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["type", "page", "columns", "data"],
-        "properties": {
-          "type": { "type": "string", "enum": ["table"] },
-          "page": { "type": "integer" },
-          "columns": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "array",
-              "items": { "type": "string" }
-            }
-          }
-        }
+        },
+        "required": ["level", "text", "page"]
       }
     }
-  }
+  },
+  "required": ["title", "outline"]
 }

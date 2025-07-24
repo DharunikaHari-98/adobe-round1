@@ -1,12 +1,8 @@
-import fitz  # PyMuPDF
+import fitz
+import re
 
-def extract_outline_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
+def extract_outline(doc):
     headings = []
-    font_style_map = {}
-
-    title_text = ""
-    max_font_size = 0
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
@@ -15,62 +11,84 @@ def extract_outline_from_pdf(pdf_path):
         for block in blocks:
             if "lines" not in block:
                 continue
-
             for line in block["lines"]:
+                line_text = ""
+                max_font_size = 0
+                is_bold = False
+                is_centered = False
+
                 for span in line["spans"]:
                     text = span["text"].strip()
-                    size = span["size"]
-                    flags = span["flags"]  # Bold/italic detection
-                    bbox = span["bbox"]
-                    alignment = "center" if abs((bbox[0] + bbox[2]) / 2 - page.rect.width / 2) < 50 else "left"
-
-                    if not text or len(text) < 2:
+                    if not text:
                         continue
+                    line_text += text + " "
+                    if span["size"] > max_font_size:
+                        max_font_size = span["size"]
+                    if "bold" in span["font"].lower():
+                        is_bold = True
 
-                    # Track largest font size for Title
-                    if size > max_font_size and page_num == 0:
-                        max_font_size = size
-                        title_text = text
+                line_text = line_text.strip()
 
-                    # Store text metadata
-                    if size not in font_style_map:
-                        font_style_map[size] = []
-                    font_style_map[size].append({
-                        "text": text,
-                        "page": page_num + 1,
-                        "size": size,
-                        "bold": bool(flags & 2),
-                        "italic": bool(flags & 1),
-                        "alignment": alignment
-                    })
+                if len(line_text) < 5 or re.match(r"^\d+$", line_text):
+                    continue
 
-    # Determine heading levels (H1 > H2 > H3)
-    sorted_sizes = sorted(font_style_map.keys(), reverse=True)
-    heading_levels = {}
+                bbox = line["bbox"]
+                page_width = page.rect.width
+                center_tolerance = 40  # pixels
+                if abs((bbox[0] + bbox[2]) / 2 - page_width / 2) < center_tolerance:
+                    is_centered = True
 
-    if len(sorted_sizes) >= 1:
-        heading_levels[sorted_sizes[0]] = "H1"
-    if len(sorted_sizes) >= 2:
-        heading_levels[sorted_sizes[1]] = "H2"
-    if len(sorted_sizes) >= 3:
-        heading_levels[sorted_sizes[2]] = "H3"
+                level = "H3"
+                if max_font_size >= 17 or is_bold and is_centered:
+                    level = "H1"
+                elif max_font_size >= 13 or is_bold:
+                    level = "H2"
 
-    # Extract headings with additional cues
-    for size in heading_levels:
-        for item in font_style_map[size]:
-            is_heading = (
-                item["bold"] or
-                item["alignment"] == "center" or
-                len(item["text"].split()) <= 10  # Short text likely heading
-            )
-            if is_heading:
                 headings.append({
-                    "level": heading_levels[size],
-                    "text": item["text"],
-                    "page": item["page"]
+                    "level": level,
+                    "text": line_text,
+                    "page": page_num + 1
                 })
 
+    merged = []
+    i = 0
+    while i < len(headings):
+        current = headings[i]
+        while i + 1 < len(headings) and headings[i + 1]["page"] == current["page"]:
+            next_heading = headings[i + 1]
+            if (
+                current["level"] == next_heading["level"] and
+                len(current["text"].split()) <= 4 and
+                len(next_heading["text"].split()) <= 4
+            ):
+                current["text"] = current["text"].strip() + " " + next_heading["text"].strip()
+                i += 1
+            else:
+                break
+        merged.append(current)
+        i += 1
+
+    return merged
+
+
+def extract_meta(doc, input_pdf_path):
+    metadata = doc.metadata or {}
     return {
-        "title": title_text,
-        "outline": headings
+        "title": metadata.get("title") or input_pdf_path.split("/")[-1],
+        "created": metadata.get("creationDate", ""),
+        "pages": len(doc),
+        "producer": metadata.get("producer", "")
+    }
+
+
+def extract(input_pdf_path: str):
+    doc = fitz.open(input_pdf_path)
+
+    meta = extract_meta(doc, input_pdf_path)
+    outline = extract_outline(doc)
+
+    return {
+        "title": meta["title"],
+        "meta": meta,
+        "outline": outline
     }
