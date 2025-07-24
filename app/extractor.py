@@ -34,12 +34,15 @@ def extract_outline(doc):
 
                 bbox = line["bbox"]
                 page_width = page.rect.width
-                center_tolerance = 40  # pixels
+                center_tolerance = 40
                 if abs((bbox[0] + bbox[2]) / 2 - page_width / 2) < center_tolerance:
                     is_centered = True
 
+                if re.match(r"^\d+[\.\d]*\s+", line_text) or line_text.lower() in ["abstract", "conclusion", "references"]:
+                    is_bold = True
+
                 level = "H3"
-                if max_font_size >= 17 or is_bold and is_centered:
+                if max_font_size >= 17 or (is_bold and is_centered):
                     level = "H1"
                 elif max_font_size >= 13 or is_bold:
                     level = "H2"
@@ -70,7 +73,6 @@ def extract_outline(doc):
 
     return merged
 
-
 def extract_meta(doc, input_pdf_path):
     metadata = doc.metadata or {}
     return {
@@ -80,13 +82,10 @@ def extract_meta(doc, input_pdf_path):
         "producer": metadata.get("producer", "")
     }
 
-
 def extract(input_pdf_path: str):
     doc = fitz.open(input_pdf_path)
-
     meta = extract_meta(doc, input_pdf_path)
     outline = extract_outline(doc)
-
     return {
         "title": meta["title"],
         "meta": meta,
