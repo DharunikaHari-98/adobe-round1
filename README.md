@@ -86,3 +86,5 @@ Feature	Status
 
 ✔ Meets Adobe's schema
 
+Added multilingual support
+
