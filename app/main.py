@@ -1,6 +1,6 @@
 import os
 import json
-from extractor import extract  # make sure extract exists in extractor.py
+from extractor import extract 
 
 INPUT_DIR = "/app/input"
 OUTPUT_DIR = "/app/output"
