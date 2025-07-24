@@ -38,6 +38,7 @@ def extract_outline(doc):
                 if abs((bbox[0] + bbox[2]) / 2 - page_width / 2) < center_tolerance:
                     is_centered = True
 
+                # Regex boost: e.g., '1.', '1.1', 'Introduction', etc.
                 if re.match(r"^\d+[\.\d]*\s+", line_text) or line_text.lower() in ["abstract", "conclusion", "references"]:
                     is_bold = True
 
@@ -53,6 +54,7 @@ def extract_outline(doc):
                     "page": page_num + 1
                 })
 
+    # Merge short headings from same page
     merged = []
     i = 0
     while i < len(headings):

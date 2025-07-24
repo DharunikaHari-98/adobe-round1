@@ -1,6 +1,6 @@
 import os
 import json
-from extractor import extract 
+from extractor import extract  # make sure extract exists in extractor.py
 
 INPUT_DIR = "/app/input"
 OUTPUT_DIR = "/app/output"
@@ -13,7 +13,7 @@ def main():
 
             print(f"📄 Processing: {filename}")
             try:
-                result = extract(input_path)  
+                result = extract(input_path)  # call your extract() method
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, indent=2, ensure_ascii=False)
                 print(f"✅ Saved: {output_path}")
