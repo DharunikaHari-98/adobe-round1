@@ -13,7 +13,7 @@ def main():
 
             print(f"📄 Processing: {filename}")
             try:
-                result = extract(input_path)  # call your extract() method
+                result = extract(input_path)  
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, indent=2, ensure_ascii=False)
                 print(f"✅ Saved: {output_path}")
